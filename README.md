@@ -33,16 +33,16 @@ The frontend is built with HTML, CSS, and Chart.js for interactive visualization
 * **Deployment:** Vercel (recommended)
 
 ## Project Structure 
-ITC-Trend-Analysis/
-├── api/
-│   └── index.py
-├── templates/
-│   └── index.html
-├── itc_lstm_model.keras
-├── scaler.pkl
-├── requirements.txt
-├── vercel.json
-└── .gitignore
+        ITC-Trend-Analysis/
+           ├── api/
+           │   └── index.py
+           ├── templates/
+           │   └── index.html
+           ├── itc_lstm_model.keras
+           ├── scaler.pkl
+           ├── requirements.txt
+           ├── vercel.json
+           └── .gitignore
 
 ## Setup & Installation (Local Development) ⚙️
 
