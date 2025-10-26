@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ITC Trend Analysis</title>
+        <link rel="icon" href="data:," />
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.1.0/dist/chartjs-chart-financial.min.js"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1/dist/chartjs-adapter-luxon.min.js"></script>
+
+        <style>
+            /* --- Base & Page Layout --- */
+            html,
+            body {
+                height: 100vh;
+                margin: 0;
+                overflow: hidden;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                background: #f4f4f4;
+                font-size: 16px;
+            }
+            body {
+                display: flex;
+                flex-direction: column;
+            }
+            header {
+                background: #2c3e50;
+                color: white;
+                padding: 10px 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-shrink: 0;
+            }
+            header h1 {
+                margin: 0;
+                font-size: 1.3rem;
+            }
+            .info div {
+                font-size: 0.8rem;
+                text-align: right;
+            }
+
+            /* --- Main Grid (3 Rows) --- */
+            .container {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: 1.5fr 1fr auto;
+                gap: 15px;
+                padding: 15px;
+                flex-grow: 1;
+                overflow: hidden;
+                min-height: 0;
+            }
+
+            /* --- Card Styling --- */
+            .card {
+                background: white;
+                padding: 15px;
+                border-radius: 8px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            .card h2 {
+                margin: 0 0 10px 0;
+                font-size: 1rem;
+                color: #333;
+                font-weight: 600;
+            }
+            .card h3 {
+                font-size: 0.8rem;
+                color: #777;
+                margin: 0 0 8px 0;
+                font-weight: normal;
+                text-align: center;
+            }
+
+            /* --- Row 1 Layout --- */
+            #liveMarketCard {
+                grid-column: 1 / 3;
+                grid-row: 1 / 2;
+            }
+            #modelPredCardLeft {
+                grid-column: 3 / 4;
+                grid-row: 1 / 2;
+            }
+            #modelPredCardRight {
+                grid-column: 4 / 5;
+                grid-row: 1 / 2;
+            }
+
+            /* Card 1: Live Market */
+            .price-container {
+                display: flex;
+                align-items: flex-end;
+                gap: 10px;
+                margin-bottom: 8px;
+            }
+            #price {
+                font-size: 2rem;
+                font-weight: bold;
+                color: #111;
+                line-height: 1;
+            }
+            #priceChange {
+                font-size: 1rem;
+                font-weight: 600;
+                line-height: 1.2;
+            }
+            .change-positive {
+                color: #2ecc71;
+            }
+            .change-negative {
+                color: #e74c3c;
+            }
+            .volume-chart-container {
+                flex-shrink: 0;
+                flex-basis: 70px;
+                position: relative;
+                margin-top: 5px;
+            }
+
+            /* Card 2: Model Prediction Left */
+            #modelPredCardLeft {
+                justify-content: space-between;
+            }
+            .prediction-label {
+                font-size: 1.2rem;
+                font-weight: bold;
+                text-align: center;
+                padding: 8px 12px;
+                border-radius: 6px;
+                color: white;
+                margin-bottom: 15px;
+            }
+            .prediction-label.bullish {
+                background-color: #2ecc71;
+            }
+            .prediction-label.bearish {
+                background-color: #e74c3c;
+            }
+            h3.indicators-title {
+                font-size: 0.8rem;
+                color: #777;
+                margin: 15px 0 8px 0;
+                font-weight: normal;
+            }
+            .confidence-score {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+            .confidence-score li {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                font-size: 0.8rem;
+                margin-bottom: 6px;
+            }
+            .confidence-score .icon {
+                width: 22px;
+                height: 22px;
+                line-height: 22px;
+                text-align: center;
+                border-radius: 4px;
+                background: #555;
+                color: white;
+                font-size: 0.6rem;
+                font-weight: bold;
+                margin-right: 6px;
+                flex-shrink: 0;
+            }
+            .indicator-label {
+                margin-right: auto;
+                padding-left: 5px;
+            }
+            .indicator-value {
+                font-weight: 600;
+                color: #333;
+                font-size: 0.85rem;
+            }
+
+            /* Card 3: Model Prediction Right (Gauges) */
+            #modelPredCardRight {
+                align-items: center;
+            }
+            .gauge-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: space-around;
+                width: 100%;
+                flex-grow: 1;
+                position: relative;
+            }
+            .gauge-wrapper {
+                width: 100%;
+                max-width: 150px;
+                position: relative;
+                text-align: center;
+                margin-bottom: 10px;
+            }
+            .gauge-label {
+                position: absolute;
+                top: 70%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 1.5rem;
+                font-weight: bold;
+            }
+            #confidenceGaugeLabel {
+                color: #2ecc71;
+            }
+            #accuracyGaugeLabel {
+                color: #3498db;
+            }
+
+            /* --- Row 2 Layout (Technical Indicators) --- */
+            #techIndicatorRow {
+                grid-column: 1 / 5;
+                grid-row: 2 / 3;
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 15px;
+                min-height: 0;
+            }
+            .indicator-panel {
+                background: white;
+                padding: 10px;
+                border-radius: 8px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            .indicator-panel h3 {
+                margin: 0 0 5px 0;
+                font-size: 0.8rem;
+                color: #555;
+                text-align: center;
+            }
+            .chart-container-small {
+                flex-grow: 1;
+                position: relative;
+                min-height: 50px;
+            }
+
+            /* --- Row 3 Layout (Pipeline Status) --- */
+            #pipelineCard {
+                grid-column: 1 / 5;
+                grid-row: 3 / 4;
+                padding: 10px 15px;
+            }
+            #pipelineCard ul {
+                margin: 0;
+                padding: 0;
+                list-style: none;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-around;
+                align-items: center;
+            }
+            #pipelineCard li {
+                margin: 0 10px;
+                font-size: 0.8rem;
+                white-space: nowrap;
+            }
+            #pipelineCard li span {
+                font-weight: 600;
+                color: #333;
+                margin-left: 5px;
+            }
+
+            /* --- Chart Wrappers --- */
+            .chart-container {
+                flex-grow: 1;
+                position: relative;
+                min-height: 0;
+            }
+
+            /* --- RESPONSIVENESS --- */
+            @media (max-width: 1200px) {
+                #techIndicatorRow {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+                .chart-container-small {
+                    min-height: 100px;
+                }
+                #pipelineCard ul {
+                    justify-content: space-between;
+                }
+            }
+            @media (max-width: 767px) {
+                html,
+                body {
+                    overflow-y: auto;
+                }
+                .container {
+                    grid-template-columns: 1fr;
+                    grid-template-rows: auto auto auto auto auto;
+                    padding: 10px;
+                }
+                #liveMarketCard {
+                    grid-row: 1 / 2;
+                }
+                #modelPredCardLeft {
+                    grid-row: 2 / 3;
+                }
+                #modelPredCardRight {
+                    grid-row: 3 / 4;
+                }
+                #techIndicatorRow {
+                    grid-row: 4 / 5;
+                    grid-template-columns: 1fr;
+                }
+                #pipelineCard {
+                    grid-row: 5 / 6;
+                }
+                .chart-container-small {
+                    min-height: 150px;
+                }
+                #pipelineCard ul {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+                #pipelineCard li {
+                    margin: 3px 0;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>ITC Trend Analysis</h1>
+            <div class="info">
+                <div id="lastUpdated">Last updated: --</div>
+                <div id="marketStatus">Market Status: --</div>
+            </div>
+        </header>
+
+        <div class="container">
+            <div class="card" id="liveMarketCard">
+                <h2>Live Market</h2>
+                <div class="price-container">
+                    <div id="price">--</div>
+                    <div id="priceChange">--</div>
+                </div>
+                <div class="chart-container"><canvas id="candleChart"></canvas></div>
+                <div class="volume-chart-container"><canvas id="volumeChart"></canvas></div>
+            </div>
+
+            <div class="card" id="modelPredCardLeft">
+                <h2>Model Prediction</h2>
+                <div id="prediction" class="prediction-label">--</div>
+                <h3 class="indicators-title">Key Indicators (Latest Value)</h3>
+                <ul class="confidence-score">
+                    <li><span class="icon">RSI</span> <span class="indicator-label">RSI</span> <span class="indicator-value" id="val-rsi">--</span></li>
+                    <li><span class="icon">MACD</span> <span class="indicator-label">MACD</span> <span class="indicator-value" id="val-macd">--</span></li>
+                    <li><span class="icon">SMA</span> <span class="indicator-label">SMA</span> <span class="indicator-value" id="val-sma">--</span></li>
+                </ul>
+            </div>
+
+            <div class="card" id="modelPredCardRight">
+                <div class="gauge-container">
+                    <div class="gauge-wrapper">
+                        <h3>Confidence</h3>
+                        <canvas id="confidenceGauge"></canvas>
+                        <div id="confidenceGaugeLabel" class="gauge-label">--</div>
+                    </div>
+                    <div class="gauge-wrapper">
+                        <h3>Accuracy</h3>
+                        <canvas id="accuracyGauge"></canvas>
+                        <div id="accuracyGaugeLabel" class="gauge-label">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="techIndicatorRow">
+                <div class="indicator-panel">
+                    <h3>Price chart</h3>
+                    <div class="chart-container-small"><canvas id="priceLineChart"></canvas></div>
+                </div>
+                <div class="indicator-panel">
+                    <h3>RSI</h3>
+                    <div class="chart-container-small"><canvas id="rsiChart"></canvas></div>
+                </div>
+                <div class="indicator-panel">
+                    <h3>Bollinger Bands</h3>
+                    <div class="chart-container-small"><canvas id="bollingerChart"></canvas></div>
+                </div>
+                <div class="indicator-panel">
+                    <h3>MACD</h3>
+                    <div class="chart-container-small"><canvas id="macdChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="card" id="pipelineCard">
+                <ul>
+                    <li>Alpha Vantage API: <span id="dataFetchStatus">--</span></li>
+                    <li>Data Update Latency: <span id="modelRunStatus">--</span></li>
+                    <li>Model version: <span id="dashboardUpdateStatus">--</span></li>
+                    <li>Next retraining: <span id="nextRetraining">--</span></li>
+                </ul>
+            </div>
+        </div>
+        <script>
+            // --- START SCRIPT ---
+            try {
+                // API Key is handled by backend now
+                const SYMBOL = "ITC.BSE";
+
+                Chart.defaults.plugins.tooltip.callbacks.title = function (tooltipItems) {
+                    if (tooltipItems.length > 0) {
+                        const item = tooltipItems[0];
+                        const date = luxon.DateTime.fromMillis(item.parsed.x);
+                        return date.toFormat("MMM dd");
+                    }
+                    return "";
+                };
+
+                // --- Chart Options / Instances ---
+                const baseChartOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: "index" },
+                    plugins: { legend: { display: false }, tooltip: { enabled: true, mode: "index", intersect: false } },
+                };
+                const timeScaleOptions = { x: { type: "time", time: { unit: "day" }, display: false, ticks: { source: "auto", maxRotation: 0, autoSkip: true } } };
+                const smallYScaleOptions = { y: { display: true, ticks: { maxTicksLimit: 5, font: { size: 9 } } } };
+                const fewerYScaleOptions = { y: { display: true, ticks: { maxTicksLimit: 3, font: { size: 9 } } } };
+                const smallChartOptions = { ...baseChartOptions, scales: { ...timeScaleOptions, ...smallYScaleOptions }, layout: { padding: { top: 5, bottom: 0, left: 0, right: 5 } } };
+                const fewerTicksOptions = { ...baseChartOptions, scales: { ...timeScaleOptions, ...fewerYScaleOptions }, layout: { padding: { top: 5, bottom: 0, left: 0, right: 5 } } };
+                const gaugeOptions = { responsive: true, maintainAspectRatio: true, rotation: -90, circumference: 180, cutout: "70%", plugins: { legend: { display: false }, tooltip: { enabled: false } } };
+
+                console.log("Initializing charts...");
+                const candleCtx = document.getElementById("candleChart")?.getContext("2d");
+                let candleChart;
+                if (candleCtx) {
+                    candleChart = new Chart(candleCtx, {
+                        type: "candlestick",
+                        data: { datasets: [{ label: "ITC", data: [], color: { up: "rgba(80, 160, 115, 1)", down: "rgba(215, 85, 65, 1)", unchanged: "rgba(90, 90, 90, 1)" } }] },
+                        options: { ...baseChartOptions, scales: { x: { type: "time", time: { unit: "day" }, display: false, ticks: { source: "auto" } }, y: { position: "right", ticks: { font: { size: 9 } } } } },
+                    });
+                } else {
+                    console.error("Could not get context for candleChart");
+                }
+                const volumeChart = new Chart(document.getElementById("volumeChart").getContext("2d"), {
+                    type: "bar",
+                    data: { labels: [], datasets: [{ label: "Volume", data: [], backgroundColor: "rgba(100, 100, 200, 0.4)" }] },
+                    options: { ...baseChartOptions, scales: { x: { type: "time", time: { unit: "day" }, display: true, ticks: { source: "auto", maxRotation: 0, autoSkip: true, font: { size: 9 } } }, y: { display: false } } },
+                });
+                const priceLineChart = new Chart(document.getElementById("priceLineChart").getContext("2d"), {
+                    type: "line",
+                    data: {
+                        labels: [],
+                        datasets: [
+                            { label: "Price", data: [], borderColor: "#3498db", fill: false, borderWidth: 1.5, pointRadius: 1 },
+                            { label: "SMA", data: [], borderColor: "#27ae60", fill: false, borderWidth: 1, borderDash: [4, 4], pointRadius: 0 },
+                            { label: "EMA", data: [], borderColor: "#e67e22", fill: false, borderWidth: 1, borderDash: [4, 4], pointRadius: 0 },
+                        ],
+                    },
+                    options: { ...smallChartOptions, plugins: { ...smallChartOptions.plugins, legend: { display: true, position: "top", align: "end", labels: { boxWidth: 8, font: { size: 9 }, padding: 8 } } } },
+                });
+                const rsiChart = new Chart(document.getElementById("rsiChart").getContext("2d"), {
+                    type: "line",
+                    data: { datasets: [{ label: "RSI", data: [], borderColor: "orange", fill: false, borderWidth: 1.5, pointRadius: 1 }] },
+                    options: smallChartOptions,
+                });
+                const bollingerChart = new Chart(document.getElementById("bollingerChart").getContext("2d"), {
+                    type: "line",
+                    data: {
+                        labels: [],
+                        datasets: [
+                            { label: "Bollinger Upper", data: [], borderColor: "#e74c3c", fill: false, borderWidth: 1, pointRadius: 0 },
+                            { label: "Bollinger Lower", data: [], borderColor: "#9b59b6", fill: false, borderWidth: 1, pointRadius: 0 },
+                        ],
+                    },
+                    options: fewerTicksOptions,
+                });
+                const macdChart = new Chart(document.getElementById("macdChart").getContext("2d"), {
+                    type: "line",
+                    data: {
+                        labels: [],
+                        datasets: [
+                            { label: "MACD", data: [], borderColor: "#3498db", fill: false, borderWidth: 1.5, pointRadius: 1 },
+                            { label: "Signal", data: [], borderColor: "#e74c3c", fill: false, borderWidth: 1, borderDash: [4, 4], pointRadius: 0 },
+                        ],
+                    },
+                    options: {
+                        ...fewerTicksOptions,
+                        scales: { ...fewerTicksOptions.scales, y: { ...fewerTicksOptions.scales.y, ticks: { precision: 2 } } },
+                        plugins: { ...fewerTicksOptions.plugins, legend: { display: true, position: "top", align: "end", labels: { boxWidth: 8, font: { size: 9 }, padding: 8 } } },
+                    },
+                });
+                const confidenceGauge = new Chart(document.getElementById("confidenceGauge").getContext("2d"), {
+                    type: "doughnut",
+                    data: { labels: ["Confidence", "Remaining"], datasets: [{ data: [0, 100], backgroundColor: ["#2ecc71", "#ecf0f1"], borderWidth: 0 }] },
+                    options: gaugeOptions,
+                });
+                const accuracyGauge = new Chart(document.getElementById("accuracyGauge").getContext("2d"), {
+                    type: "doughnut",
+                    data: { labels: ["Accuracy", "Remaining"], datasets: [{ data: [0, 100], backgroundColor: ["#3498db", "#ecf0f1"], borderWidth: 0 }] },
+                    options: gaugeOptions,
+                });
+                console.log("Charts initialized.");
+
+                // --- Indicator Logic (Frontend - Robust, using CORRECTED EMA) ---
+                function calculateSMA(prices, period = 5) {
+                    if (!prices || prices.length < period) return new Array(prices?.length || 0).fill(null);
+                    return prices.map((_, i) => {
+                        if (i < period - 1) return null;
+                        const slice = prices.slice(i - period + 1, i + 1);
+                        const validSlice = slice.filter((p) => typeof p === "number" && !isNaN(p));
+                        if (validSlice.length < period) return null;
+                        const sum = validSlice.reduce((a, b) => a + b, 0);
+                        return sum / period;
+                    });
+                }
+                function calculateRSI(prices, period = 14) {
+                    if (!prices || prices.length < period + 1) return new Array(prices?.length || 0).fill(null);
+                    let gains = [];
+                    let losses = [];
+                    for (let i = 1; i < prices.length; i++) {
+                        if (typeof prices[i] !== "number" || typeof prices[i - 1] !== "number" || isNaN(prices[i]) || isNaN(prices[i - 1])) {
+                            gains.push(0);
+                            losses.push(0);
+                            continue;
+                        }
+                        const diff = prices[i] - prices[i - 1];
+                        gains.push(Math.max(0, diff));
+                        losses.push(Math.max(0, -diff));
+                    }
+                    let rsi = [null];
+                    let avgGain = NaN,
+                        avgLoss = NaN;
+                    for (let i = 0; i < gains.length; i++) {
+                        if (i === period - 1) {
+                            avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
+                            avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
+                        } else if (i >= period) {
+                            avgGain = (avgGain * (period - 1) + gains[i]) / period;
+                            avgLoss = (avgLoss * (period - 1) + losses[i]) / period;
+                        }
+                        if (!isNaN(avgGain) && !isNaN(avgLoss)) {
+                            const rs = avgLoss === 0 ? Infinity : avgGain / avgLoss;
+                            rsi.push(rs === Infinity ? 100 : 100 - 100 / (1 + rs));
+                        } else if (i >= period - 1) {
+                            rsi.push(null);
+                        }
+                    }
+                    while (rsi.length < prices.length) rsi.push(null);
+                    return rsi;
+                }
+                function calculateBollinger(prices, period = 20, stdDevMultiplier = 2) {
+                    if (!prices || prices.length < period) return { upper: new Array(prices?.length || 0).fill(null), lower: new Array(prices?.length || 0).fill(null) };
+                    const upper = [],
+                        lower = [];
+                    for (let i = 0; i < prices.length; i++) {
+                        if (i < period - 1) {
+                            upper.push(null);
+                            lower.push(null);
+                            continue;
+                        }
+                        const slice = prices.slice(i - period + 1, i + 1);
+                        const validSlice = slice.filter((p) => typeof p === "number" && !isNaN(p));
+                        if (validSlice.length === 0) {
+                            upper.push(null);
+                            lower.push(null);
+                            continue;
+                        }
+                        const avg = validSlice.reduce((a, b) => a + b, 0) / validSlice.length;
+                        const variance = validSlice.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / validSlice.length;
+                        const std = Math.sqrt(variance);
+                        const up = avg + stdDevMultiplier * std;
+                        const low = avg - stdDevMultiplier * std;
+                        upper.push(isNaN(up) ? null : up);
+                        lower.push(isNaN(low) ? null : low);
+                    }
+                    return { upper, lower };
+                }
+                function calculateEMA(data, period) {
+                    if (!data || data.length === 0) return new Array(data?.length || 0).fill(null);
+                    let k = 2 / (period + 1);
+                    let emaArray = new Array(data.length).fill(null);
+                    let sum = 0;
+                    let count = 0;
+                    let smaIndex = -1;
+                    for (let i = 0; i < data.length; i++) {
+                        if (typeof data[i] === "number" && !isNaN(data[i])) {
+                            sum += data[i];
+                            count++;
+                            if (count === period) {
+                                emaArray[i] = sum / period;
+                                smaIndex = i;
+                                break;
+                            }
+                        } else if (count > 0) {
+                            sum = 0;
+                            count = 0;
+                        }
+                    }
+                    if (smaIndex === -1) {
+                        console.warn(`EMA(${period}) could not be seeded.`);
+                        return emaArray;
+                    }
+                    for (let i = smaIndex + 1; i < data.length; i++) {
+                        const currentVal = typeof data[i] === "number" && !isNaN(data[i]) ? data[i] : null;
+                        const prevEMA = emaArray[i - 1];
+                        if (prevEMA === null) {
+                            emaArray[i] = currentVal;
+                        } else if (currentVal === null) {
+                            emaArray[i] = prevEMA;
+                        } else {
+                            emaArray[i] = currentVal * k + prevEMA * (1 - k);
+                        }
+                    }
+                    return emaArray;
+                }
+                function calculateMACD(prices, shortPeriod = 12, longPeriod = 26, signalPeriod = 9) {
+                    if (!prices || prices.length < longPeriod) {
+                        console.warn(`Not enough data (${prices?.length}) for MACD EMA calcs (needs ${longPeriod})`);
+                        const len = prices?.length || 0;
+                        return { macdLine: new Array(len).fill(null), signalLine: new Array(len).fill(null), lastMacdValue: null };
+                    }
+                    const emaShort = calculateEMA(prices, shortPeriod);
+                    const emaLong = calculateEMA(prices, longPeriod);
+                    const macdLine = prices.map((_, i) => (emaShort[i] !== null && emaLong[i] !== null ? emaShort[i] - emaLong[i] : null));
+                    if (macdLine.filter((v) => v !== null).length < signalPeriod) {
+                        console.warn(`Not enough MACD points for Signal (needs ${signalPeriod})`);
+                        return { macdLine: macdLine, signalLine: new Array(prices.length).fill(null), lastMacdValue: macdLine.filter((v) => typeof v === "number" && !isNaN(v)).pop() ?? null };
+                    }
+                    const signalLine = calculateEMA(macdLine, signalPeriod);
+                    const lastValidMacd = macdLine.filter((v) => typeof v === "number" && !isNaN(v)).pop();
+                    return { macdLine: macdLine, signalLine: signalLine, lastMacdValue: lastValidMacd ?? null };
+                }
+                function cleanChartData(dataArray, timestamps) {
+                    if (!dataArray || !timestamps || dataArray.length !== timestamps.length) {
+                        console.warn("Mismatched data/timestamps", { dataLen: dataArray?.length, tsLen: timestamps?.length });
+                        return timestamps ? timestamps.map((ts) => ({ x: ts, y: null })) : [];
+                    }
+                    return dataArray.map((val, i) => ({ x: timestamps[i], y: typeof val === "number" && !isNaN(val) ? val : null }));
+                }
+
+                async function fetchPipelineStatus() {
+                    try {
+                        const resp = await fetch(`/status`);
+                        if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
+                        const status = await resp.json();
+                        document.getElementById("dashboardUpdateStatus").innerText = status.model_version || "N/A";
+                        document.getElementById("nextRetraining").innerText = status.next_retraining || "N/A";
+                    } catch (e) {
+                        console.error("Pipeline status fetch error:", e);
+                        document.getElementById("dashboardUpdateStatus").innerText = "Failed";
+                        document.getElementById("nextRetraining").innerText = "Failed";
+                    }
+                }
+                function updateMarketStatus() {
+                    const now = luxon.DateTime.now().setZone("Asia/Kolkata");
+                    const hour = now.hour;
+                    const minute = now.minute;
+                    const weekday = now.weekday;
+                    let status = "Closed";
+                    if (weekday >= 1 && weekday <= 5) {
+                        if (hour > 9 || (hour === 9 && minute >= 15)) {
+                            if (hour < 15 || (hour === 15 && minute < 30)) {
+                                status = "Open";
+                            }
+                        }
+                    }
+                    document.getElementById("marketStatus").innerText = `Market Status: ${status}`;
+                }
+
+                async function fetchStockData() {
+                    const startTime = performance.now();
+                    fetchPipelineStatus();
+                    updateMarketStatus();
+                    console.log(`Fetching stock data from backend for ${SYMBOL}...`);
+                    document.getElementById("dataFetchStatus").innerText = "Fetching...";
+                    try {
+                        const resp = await fetch(`/stockdata/${SYMBOL}`); // Call backend
+                        if (!resp.ok) {
+                            let errorMsg = `Failed (${resp.status})`;
+                            try {
+                                const errorData = await resp.json();
+                                errorMsg = `Failed: ${errorData.error || resp.statusText}`;
+                            } catch (e) {}
+                            document.getElementById("dataFetchStatus").innerText = errorMsg;
+                            throw new Error(`Backend fetch failed: ${resp.status} ${resp.statusText}`);
+                        }
+                        const stockData = await resp.json(); // Array [{t,o,h,l,c,v}, ...]
+                        if (!Array.isArray(stockData) || stockData.length < 2) {
+                            document.getElementById("dataFetchStatus").innerText = "Failed (Invalid Data)";
+                            throw new Error("Invalid data from backend.");
+                        }
+                        document.getElementById("dataFetchStatus").innerText = "Running";
+                        console.log(`Received ${stockData.length} points from backend.`);
+                        const displayData = stockData.slice(-30);
+                        const allPrices = stockData.map((d) => d.c);
+                        const displayTimes = displayData.map((d) => d.t);
+                        const displayPrices = displayData.map((d) => d.c);
+                        const displayVolumes = displayData.map((d) => d.v);
+                        const displayTimestamps = displayTimes.map((t) => new Date(t).valueOf());
+                        console.log("Updating UI text...");
+                        const lastPrice = displayPrices.filter((p) => p !== null).pop();
+                        const secondLastPrice = displayPrices.filter((p) => p !== null).slice(-2, -1)[0];
+                        document.getElementById("price").innerText = lastPrice !== undefined ? lastPrice.toFixed(2) : "--";
+                        if (lastPrice !== undefined && secondLastPrice !== undefined) {
+                            const change = lastPrice - secondLastPrice;
+                            const changePct = (change / secondLastPrice) * 100;
+                            const changeEl = document.getElementById("priceChange");
+                            changeEl.innerText = `${change >= 0 ? "▲" : "▼"} ${change.toFixed(2)} (${changePct.toFixed(2)}%)`;
+                            changeEl.className = change >= 0 ? "change-positive" : "change-negative";
+                        } else {
+                            document.getElementById("priceChange").innerText = "--";
+                            document.getElementById("priceChange").className = "";
+                        }
+                        document.getElementById("lastUpdated").innerText = "Last updated: " + (displayTimes.length > 0 ? displayTimes.at(-1) : "--");
+                        console.log("Calculating indicators...");
+                        const timestampsFull = stockData.map((d) => new Date(d.t).valueOf()); // Timestamps for all data for charts
+                        const sma = calculateSMA(allPrices);
+                        const ema = calculateEMA(allPrices, 5);
+                        const rsi = calculateRSI(allPrices);
+                        const boll = calculateBollinger(allPrices);
+                        const macdData = calculateMACD(allPrices);
+                        console.log("Indicators calculated. MACD last:", macdData.lastMacdValue);
+                        const smaDisplay = sma.slice(-30);
+                        const emaDisplay = ema.slice(-30);
+                        const rsiDisplay = rsi.slice(-30);
+                        const bollUpperDisplay = boll.upper.slice(-30);
+                        const bollLowerDisplay = boll.lower.slice(-30);
+                        const macdLineDisplay = macdData.macdLine.slice(-30);
+                        const signalLineDisplay = macdData.signalLine.slice(-30);
+                        console.log("Cleaning & preparing chart data...");
+                        const candleData = displayData.map((d, i) => ({ x: displayTimestamps[i], o: d.o, h: d.h, l: d.l, c: d.c }));
+                        const volumeData = displayVolumes.map((v, i) => ({ x: displayTimestamps[i], y: typeof v === "number" && !isNaN(v) ? v : null }));
+                        const priceData = cleanChartData(displayPrices, displayTimestamps);
+                        const smaData = cleanChartData(smaDisplay, displayTimestamps);
+                        const emaData = cleanChartData(emaDisplay, displayTimestamps);
+                        const rsiData = cleanChartData(rsiDisplay, displayTimestamps);
+                        const bollUpperData = cleanChartData(bollUpperDisplay, displayTimestamps);
+                        const bollLowerData = cleanChartData(bollLowerDisplay, displayTimestamps);
+                        const macdLineData = cleanChartData(macdLineDisplay, displayTimestamps);
+                        const signalLineData = cleanChartData(signalLineDisplay, displayTimestamps);
+                        console.log("Updating charts...");
+                        if (candleChart) {
+                            candleChart.data.datasets[0].data = candleData;
+                            candleChart.update("none");
+                        }
+                        volumeChart.data.labels = displayTimestamps;
+                        volumeChart.data.datasets[0].data = volumeData;
+                        volumeChart.update("none");
+                        priceLineChart.data.labels = displayTimestamps;
+                        priceLineChart.data.datasets[0].data = priceData;
+                        priceLineChart.data.datasets[1].data = smaData;
+                        priceLineChart.data.datasets[2].data = emaData;
+                        priceLineChart.update("none");
+                        rsiChart.data.labels = displayTimestamps;
+                        rsiChart.data.datasets[0].data = rsiData;
+                        rsiChart.update("none");
+                        bollingerChart.data.labels = displayTimestamps;
+                        bollingerChart.data.datasets[0].data = bollUpperData;
+                        bollingerChart.data.datasets[1].data = bollLowerData;
+                        bollingerChart.update("none");
+                        macdChart.data.labels = displayTimestamps;
+                        macdChart.data.datasets[0].data = macdLineData;
+                        macdChart.data.datasets[1].data = signalLineData;
+                        macdChart.update("none");
+                        console.log("Charts updated.");
+                        console.log("Updating indicator text...");
+                        const lastRsi = rsi.filter((v) => typeof v === "number" && !isNaN(v)).pop();
+                        const lastSma = sma.filter((v) => typeof v === "number" && !isNaN(v)).pop();
+                        const lastMacd = macdData.lastMacdValue;
+                        document.getElementById("val-rsi").innerText = lastRsi != null ? lastRsi.toFixed(2) : "...";
+                        document.getElementById("val-sma").innerText = lastSma != null ? lastSma.toFixed(2) : "...";
+                        document.getElementById("val-macd").innerText = lastMacd != null ? lastMacd.toFixed(2) : "...";
+                        console.log("Fetching prediction...");
+                        try {
+                            const predResp = await fetch(`/predict`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prices: displayPrices }) }); // Send last 30
+                            if (!predResp.ok) {
+                                const errorBody = await predResp.text();
+                                console.error(`Model server error: ${predResp.status}. Body: ${errorBody}`);
+                                document.getElementById("prediction").innerText = `Server Err (${predResp.status})`;
+                                document.getElementById("prediction").className = "prediction-label";
+                                document.getElementById("confidenceGaugeLabel").innerText = "--";
+                                document.getElementById("accuracyGaugeLabel").innerText = "--";
+                                confidenceGauge.data.datasets[0].data = [0, 100];
+                                accuracyGauge.data.datasets[0].data = [0, 100];
+                                confidenceGauge.update("none");
+                                accuracyGauge.update("none");
+                            } else {
+                                const pred = await predResp.json();
+                                console.log("Prediction received:", pred);
+                                if (pred && pred.label) {
+                                    const predLabelEl = document.getElementById("prediction");
+                                    predLabelEl.innerText = pred.label.toUpperCase();
+                                    predLabelEl.className = "prediction-label " + pred.label.toLowerCase();
+                                    const conf = pred.confidence ?? 0;
+                                    confidenceGauge.data.datasets[0].data = [conf, 100 - conf];
+                                    confidenceGauge.update("none");
+                                    document.getElementById("confidenceGaugeLabel").innerText = pred.confidence !== undefined ? pred.confidence.toFixed(0) + "%" : "--";
+                                    const acc = pred.accuracy ?? 0;
+                                    accuracyGauge.data.datasets[0].data = [acc, 100 - acc];
+                                    accuracyGauge.update("none");
+                                    document.getElementById("accuracyGaugeLabel").innerText = pred.accuracy !== undefined ? pred.accuracy.toFixed(0) + "%" : "--";
+                                } else {
+                                    console.error("Invalid model response:", pred);
+                                    document.getElementById("prediction").innerText = "Invalid Resp";
+                                    document.getElementById("prediction").className = "prediction-label";
+                                }
+                            }
+                        } catch (e) {
+                            console.error("Model fetch error:", e);
+                            document.getElementById("prediction").innerText = "Fetch Failed";
+                            document.getElementById("prediction").className = "prediction-label";
+                        }
+                    } catch (err) {
+                        console.error("Main fetch error:", err);
+                        if (err.message.includes("fetch") || err instanceof TypeError) {
+                            document.getElementById("dataFetchStatus").innerText = "Failed (Network)";
+                        } else {
+                            document.getElementById("dataFetchStatus").innerText = "Failed (Processing)";
+                        }
+                    } finally {
+                        const endTime = performance.now();
+                        const duration = ((endTime - startTime) / 1000).toFixed(1);
+                        document.getElementById("modelRunStatus").innerText = `${duration}s`;
+                        console.log(`--- Update cycle finished in ${duration}s ---`);
+                    }
+                }
+
+                console.log("Adding DOMContentLoaded listener...");
+                document.addEventListener("DOMContentLoaded", () => {
+                    console.log("DOMContentLoaded event fired. Initial calls...");
+                    updateMarketStatus();
+                    fetchStockData();
+                });
+            } catch (e) {
+                console.error("CRITICAL: Error during script setup:", e);
+                const container = document.querySelector(".container");
+                if (container) container.innerHTML = `<div style="color: red; padding: 20px;"><h2>Init Error</h2><p>Check console (F12).</p><pre>${e.stack || e}</pre></div>`;
+                else alert("Init error. Check console.");
+            }
+        </script>
+    </body>
+</html>
+

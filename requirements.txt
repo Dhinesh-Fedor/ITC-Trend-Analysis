@@ -1,0 +1,9 @@
+flask
+flask_cors
+numpy
+joblib
+tensorflow
+requests
+scikit-learn
+gunicorn
+luxon # Optional, but good practice if using it client-side
