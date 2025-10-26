@@ -63,7 +63,15 @@ The frontend is built with HTML, CSS, and Chart.js for interactive visualization
     ```bash
     pip install -r requirements.txt
     ```
-4.  **Set Environment Variable:** You need an Alpha Vantage API key. Get a free one [here](https://www.alphavantage.co/support/#api-key). Set it in your terminal **before** running the server:
+    **or**
+    
+    **Create `.env` File:**
+    * In the **root directory** of your project (`ITC-Trend-Dashboard`), create a new file named exactly `.env`.
+    * Add your Alpha Vantage API key to this file (replace `YOUR_ACTUAL_API_KEY`):
+        ```dotenv
+        ALPHA_VANTAGE_KEY=YOUR_ACTUAL_API_KEY
+        ```
+5.  **Set Environment Variable:** You need an Alpha Vantage API key. Get a free one [here](https://www.alphavantage.co/support/#api-key). Set it in your terminal **before** running the server:
     ```bash
     # On Linux/macOS:
     export ALPHA_VANTAGE_KEY="YOUR_ACTUAL_API_KEY"
@@ -76,7 +84,7 @@ The frontend is built with HTML, CSS, and Chart.js for interactive visualization
 ## Running Locally 🚀
 
 1.  Make sure your virtual environment is activated and the `ALPHA_VANTAGE_KEY` is set.
-2.  Navigate to the project's root directory (`ITC-Trend-Dashboard`).
+2.  Navigate to the project's root directory (`ITC-Trend-Analysis`).
 3.  Run the Flask development server:
     ```bash
     flask --app api/index run --debug
