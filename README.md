@@ -62,14 +62,7 @@ The frontend is built with HTML, CSS, and Chart.js for interactive visualization
     ```bash
     pip install -r requirements.txt
     ```
-    **or**
-    
-    **Create `.env` File:**
-    * In the **root directory** of your project (`ITC-Trend-Analysis`), create a new file named exactly `.env`.
-    * Add your Alpha Vantage API key to this file (replace `YOUR_ACTUAL_API_KEY`):
-        ```dotenv
-        ALPHA_VANTAGE_KEY=YOUR_ACTUAL_API_KEY
-        ```
+
 5.  **Set Environment Variable:** You need an Alpha Vantage API key. Get a free one [here](https://www.alphavantage.co/support/#api-key). Set it in your terminal **before** running the server:
     ```bash
     # On Linux/macOS:
@@ -79,6 +72,15 @@ The frontend is built with HTML, CSS, and Chart.js for interactive visualization
     # On Windows (PowerShell):
     $env:ALPHA_VANTAGE_KEY="YOUR_ACTUAL_API_KEY"
     ```
+   
+    **or**
+    
+    **Create `.env` File:**
+    * In the **root directory** of your project (`ITC-Trend-Analysis`), create a new file named exactly `.env`.
+    * Add your Alpha Vantage API key to this file (replace `YOUR_ACTUAL_API_KEY`):
+        ```dotenv
+        ALPHA_VANTAGE_KEY=YOUR_ACTUAL_API_KEY
+        ```
 
 ## Running Locally 🚀
 
