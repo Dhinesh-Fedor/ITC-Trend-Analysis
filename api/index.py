@@ -9,6 +9,18 @@ import os
 import requests
 from datetime import datetime
 import sys
+from dotenv import load_dotenv 
+
+# --- Load environment variables from .env file ---
+# Construct the path to the .env file in the parent directory
+dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
+print(f"Attempting to load .env file from: {dotenv_path}")
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path=dotenv_path)
+    print(".env file loaded.")
+else:
+    print(".env file not found at expected location.")
+
 
 # Point Flask to the correct template and static folders relative to this file's location
 app = Flask(__name__, template_folder='../templates', static_folder='../static')
