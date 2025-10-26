@@ -30,7 +30,7 @@ The frontend is built with HTML, CSS, and Chart.js for interactive visualization
 * **Frontend:** HTML, CSS, JavaScript
 * **Charting:** Chart.js with `chartjs-chart-financial` and `chartjs-adapter-luxon` plugins
 * **Date/Time:** Luxon.js
-* **Deployment:** Vercel (recommended)
+
 
 ## Project Structure 
         ITC-Trend-Analysis/
