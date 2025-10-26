@@ -172,7 +172,7 @@ def get_status():
     except Exception as e: print("Status error:", e); traceback.print_exc(); return jsonify({"error": str(e)}), 500
     
     
-# Vercel runs the app, so this is not needed for deployment
+
 if __name__ == "__main__":
      app.run(host="0.0.0.0", port=5000, debug=True)
 
