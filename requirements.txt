@@ -1,9 +1,10 @@
-flask
-flask_cors
-numpy
-joblib
-tensorflow
-requests
-scikit-learn
-gunicorn
-luxon # Optional, but good practice if using it client-side
+flask==3.0.0
+flask_cors==4.0.0
+numpy==...
+joblib==...
+tensorflow==...
+requests==...
+scikit-learn==...
+gunicorn==...
+python-dotenv==... # If you added this for local use
+
