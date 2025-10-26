@@ -1,4 +1,4 @@
-# ITC Stock Trend Analysis Dashboard 📈
+# ITC Stock Trend Analysis 📈
 
 ## Description
 
@@ -41,7 +41,6 @@ The frontend is built with HTML, CSS, and Chart.js for interactive visualization
            ├── itc_lstm_model.keras
            ├── scaler.pkl
            ├── requirements.txt
-           ├── vercel.json
            └── .gitignore
 
 ## Setup & Installation (Local Development) ⚙️
@@ -66,7 +65,7 @@ The frontend is built with HTML, CSS, and Chart.js for interactive visualization
     **or**
     
     **Create `.env` File:**
-    * In the **root directory** of your project (`ITC-Trend-Dashboard`), create a new file named exactly `.env`.
+    * In the **root directory** of your project (`ITC-Trend-Analysis`), create a new file named exactly `.env`.
     * Add your Alpha Vantage API key to this file (replace `YOUR_ACTUAL_API_KEY`):
         ```dotenv
         ALPHA_VANTAGE_KEY=YOUR_ACTUAL_API_KEY
