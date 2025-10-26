@@ -2,7 +2,7 @@ Flask
 flask-cors
 numpy
 joblib
-tensorflow==2.13.0 # Make sure this matches your model training env
+tensorflow
 scikit-learn
 requests
 python-dotenv
