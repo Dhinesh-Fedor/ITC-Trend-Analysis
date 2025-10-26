@@ -84,17 +84,7 @@ The frontend is built with HTML, CSS, and Chart.js for interactive visualization
     *(Alternatively, if you add `app.run(...)` back to `api/index.py`: `python api/index.py`)*
 4.  Open your web browser and go to `http://localhost:5000/`.
 
-## Deployment (Vercel) ☁️
 
-This project is configured for easy deployment on Vercel:
-
-1.  **Push to GitHub:** Ensure your project (with the correct structure, `requirements.txt`, and `vercel.json`) is pushed to a GitHub repository.
-2.  **Import Project:** Log in to Vercel and import the project from your GitHub repository.
-3.  **Configure Environment Variable:** In your Vercel project settings (**Settings -> Environment Variables**), add your `ALPHA_VANTAGE_KEY` with your actual API key value. Ensure it's available for the **Production** environment.
-4.  **Deploy:** Trigger a deployment. Vercel will use `vercel.json` and `requirements.txt` to build and deploy your Flask app as a serverless function.
-5.  **Visit:** Access your live dashboard via the URL provided by Vercel.
-
-**Note on Deployment Size:** TensorFlow can be large. If you encounter deployment size limits on Vercel's free tier, consider using `tensorflow-cpu` in `requirements.txt` or exploring alternative hosting/model loading strategies.
 
 ## File Descriptions 📄
 
@@ -103,7 +93,6 @@ This project is configured for easy deployment on Vercel:
 * **`itc_lstm_model.keras`:** The pre-trained TensorFlow Keras LSTM model file used for making trend predictions.
 * **`scaler.pkl`:** The saved Scikit-learn MinMaxScaler object used to scale input data before feeding it to the LSTM model.
 * **`requirements.txt`:** Lists all necessary Python packages for the backend.
-* **`vercel.json`:** Configuration file instructing Vercel how to build the Python backend and route incoming web requests to the Flask application.
 * **`.gitignore`:** Specifies files and directories that Git should ignore (e.g., virtual environment).
 
 ---
