@@ -49,7 +49,7 @@ The frontend is built with HTML, CSS, and Chart.js for interactive visualization
 1.  **Clone the Repository:**
     ```bash
     git clone https://github.com/Dhinesh-Fedor/ITC-Trend-Analysis.git
-    cd ITC-Trend-Dashboard
+    cd ITC-Trend-Analysis
     ```
 2.  **Create and Activate Virtual Environment:**
     ```bash
