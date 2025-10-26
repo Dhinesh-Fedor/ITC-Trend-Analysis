@@ -173,13 +173,13 @@ def get_status():
     
     
 # Vercel runs the app, so this is not needed for deployment
-if __name__ == "__main__":
-     app.run(host="0.0.0.0", port=5000, debug=True)
+#if __name__ == "__main__":
+#     app.run(host="0.0.0.0", port=5000, debug=True)
 
 
 # Create a serverless handler
-#handler = Mangum(app)
+handler = Mangum(app)
 
 # Vercel expects a callable named `main`
-#def main(req=None, res=None):
- #   return handler(req, res)
+def main(req=None, res=None):
+     return handler(req, res)
