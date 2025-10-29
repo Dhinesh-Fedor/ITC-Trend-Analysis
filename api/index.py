@@ -22,12 +22,8 @@ CORS(app)
 
 # --- Load API Key ---
 ALPHA_VANTAGE_KEY = os.environ.get('ALPHA_VANTAGE_KEY')
-if not ALPHA_VANTAGE_KEY:
-    print("FATAL ERROR: Alpha Vantage API key not set.")
-    print("Please set the ALPHA_VANTAGE_KEY environment variable.")
-    ALPHA_VANTAGE_KEY = None
-else:
-    print("Alpha Vantage API Key loaded.")
+if not ALPHA_VANTAGE_KEY: print("FATAL ERROR: Alpha Vantage API key not set.") ; ALPHA_VANTAGE_KEY = None
+else: print("Alpha Vantage API Key loaded.")
 
 # --- Load Model and Scaler ---
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -42,11 +38,6 @@ try:
     if os.path.exists(scaler_path): scaler = joblib.load(scaler_path); print("Scaler loaded.")
     else: print(f"Scaler file not found at {scaler_path}")
 except Exception as e: print(f"FATAL ERROR loading model/scaler: {e}"); traceback.print_exc()
-
-# --- Predefined Model Test Accuracy ---
-# Using 75.0% as the placeholder accuracy
-PRE_CALCULATED_ACCURACY = 75.0
-print(f"Using pre-calculated model accuracy: {PRE_CALCULATED_ACCURACY}%")
 
 # --- Routes ---
 @app.route("/")
@@ -80,7 +71,7 @@ def get_stock_data(symbol):
     except requests.exceptions.RequestException as e: print(f"AV Network error: {e}"); return jsonify({"error": "Network error fetching stock data"}), 504
     except Exception as e: print(f"Stock data processing error: {e}"); traceback.print_exc(); return jsonify({"error": "Server error processing stock data"}), 500
 
-def preprocess_prices(prices, timesteps=60):
+def preprocess_prices(prices, timesteps=60): # Keep timesteps=30 here for compatibility
     prices_numeric = [p for p in prices if p is not None and not np.isnan(p)]
     if not prices_numeric: return np.zeros((1, timesteps, 1))
     if len(prices_numeric) < timesteps:
@@ -94,33 +85,37 @@ def preprocess_prices(prices, timesteps=60):
     if scaler is None: raise ValueError("Scaler not loaded")
     try: X_scaled = scaler.transform(X)
     except Exception as e: print(f"Scaler error: {e}"); return np.zeros((1, timesteps, 1))
+    if X_scaled.shape != (timesteps, 1): print(f"Shape error before final reshape: {X_scaled.shape}"); return np.zeros((1, timesteps, 1))
     return X_scaled.reshape(1, timesteps, 1)
 
-# --- REMOVED Dynamic Accuracy Function ---
-# def calculate_accuracy(prices, model_pred_label): ...
 
 @app.route("/predict", methods=["POST"])
 def predict():
     if model is None or scaler is None: return jsonify({"error": "Model/Scaler not loaded"}), 500
     try:
         data = request.get_json();
-        prices = data.get("prices", []) # Expecting last 60 prices
-        if not prices or len(prices) < 60:
-             return jsonify({"error": f"Not enough data points ({len(prices)}) need 60"}), 400
+        prices = data.get("prices", []) # Expecting last 30 prices from JS
+        if not prices or len(prices) < 30: # Check based on preprocess_prices default
+             return jsonify({"error": f"Not enough data points ({len(prices)}) need 30"}), 400
 
-        print(f"Predict: using last {len(prices)} prices.")
-        X = preprocess_prices(prices)
-        if np.all(X == 0) and np.any([p for p in prices if p is not None and not np.isnan(p)]):
+        prices_clean = [p for p in prices if p is not None and not np.isnan(p)]
+        if not prices_clean or len(prices_clean) < 2: # Need at least 2 for basic preprocessing checks
+            return jsonify({"error": "Not enough valid data points after cleaning"}), 400
+
+        print(f"Predict: using {len(prices_clean)} clean prices for preprocessing.")
+        X = preprocess_prices(prices_clean) # Pass cleaned prices, function expects 30
+        if np.all(X == 0) and len(prices_clean) > 0:
              print("Preprocessing failed, returning error.")
              return jsonify({"error": "Data preprocessing failed for prediction"}), 500
 
+        # Make prediction
         prob = float(model.predict(X, verbose=0)[0][0]);
         label = "Bullish" if prob >= 0.5 else "Bearish"
         confidence = round(prob*100 if label=="Bullish" else (1-prob)*100, 1)
 
-        # --- USE PRE-CALCULATED ACCURACY ---
-        accuracy = PRE_CALCULATED_ACCURACY # Use the value defined at the top
-        # --- END CHANGE ---
+        # --- FIX: Send accuracy as a number ---
+        accuracy = 75.0 # Use float, not string "75 %"
+        # --- END FIX ---
 
         response = { "label": label, "confidence": confidence, "accuracy": accuracy };
         print("Prediction response:", response)
